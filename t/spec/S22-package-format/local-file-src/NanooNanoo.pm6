@@ -1,0 +1,3 @@
+
+use Test;
+class NanooNanoo { }
