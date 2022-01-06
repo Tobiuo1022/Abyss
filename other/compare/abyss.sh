@@ -6,6 +6,7 @@ root=${filepath%/*/*/*}
 time (
 for f (`cat $root/roast/test_list`)
 do 
-    raku $root/other/client.p6 $f
+    $root/other/client $f
 done
 )
+
