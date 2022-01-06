@@ -1,7 +1,6 @@
 use v6;
 use lib $?FILE.IO.parent(2).add: 'lib';
-use lib $?FILE.IO.parent(2).add('roast/packages/Test-Helpers');
 use Abyss::Server;
 
-my $otoya = Abyss::Server.new;
-$otoya.readeval();
+my $abyss = Abyss::Server.new;
+$abyss.readeval();
