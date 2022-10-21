@@ -25,7 +25,6 @@ void strfit(char before[128], char after[128]) {
 int main(int argc, char *argv[]) {
     // Setup server socket.
     struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(struct sockaddr_in));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT_NUM);
     server_addr.sin_addr.s_addr = inet_addr(HOSTNAME);
@@ -33,13 +32,13 @@ int main(int argc, char *argv[]) {
     int socket_fd;
     // Make a socket.
     if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("socket");
+        perror("socket error");
         return 1;
     }
    
     // Connect server.
     if (connect(socket_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
-        perror("connect");
+        perror("connect error");
         goto end_socket;
     }
    
@@ -51,7 +50,7 @@ int main(int argc, char *argv[]) {
 
         // Send a message.
         if ((buf_len = send(socket_fd, path, sizeof(path), 0)) < 0) {
-            perror("send");
+            perror("send error");
             goto end_socket;
         }
         if (buf_len != sizeof(path)) {
@@ -76,4 +75,3 @@ end_socket:
    
     return 0;
 }
-
