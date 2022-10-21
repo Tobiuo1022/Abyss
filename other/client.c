@@ -39,7 +39,10 @@ int main(int argc, char *argv[]) {
     // Connect server.
     if (connect(socket_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
         perror("connect error");
-        goto end_socket;
+        if (close(socket_fd) < 0) {
+            perror("close");
+            return 2;
+        }
     }
    
     int buf_len;
@@ -51,7 +54,10 @@ int main(int argc, char *argv[]) {
         // Send a message.
         if ((buf_len = send(socket_fd, path, sizeof(path), 0)) < 0) {
             perror("send error");
-            goto end_socket;
+            if (close(socket_fd) < 0) {
+                perror("close");
+                return 2;
+            }
         }
         if (buf_len != sizeof(path)) {
             printf("Sending data is not successful.\n");
