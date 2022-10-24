@@ -9,17 +9,33 @@
 #define PORT_NUM 3333
 #define HOSTNAME "127.0.0.1"
 #define BUFSIZE 1024
-#define SEND_DATA "/Users/tobiuo/park/inet/fibonacci.p6"
+#define PATHSIZE 512
 
-void strfit(char before[128], char after[128]) {
-    char *p = before;
-    char *q = after;
+void get_fullpath(char path[PATHSIZE], char fullpath[PATHSIZE]) {
+    char cwd[PATHSIZE];
+    getcwd(cwd, sizeof cwd);
 
-    while(*p != '\0') {
-        *q = *p;
-        p++; q++;
+    // absolute path
+    if(path[0] == '/') {
+        snprintf(fullpath, PATHSIZE, "%s", path);
+    // like a ./hoge
+    } else if(path[0] == '.' && path[1] == '/') {
+        snprintf(fullpath, PATHSIZE, "%s", cwd);
+        char *f = fullpath;
+        char *p = path;
+        while(*f != '\0') {
+            f++;
+        }
+        p++;
+        while(*p != '\0') {
+            *f = *p;
+            f++; p++;
+        }
+        *f = '\0';
+    // relative path
+    } else {
+        snprintf(fullpath, PATHSIZE, "%s/%s", cwd, path);
     }
-    *q = '\0';
 }
  
 int main(int argc, char *argv[]) {
@@ -44,22 +60,26 @@ int main(int argc, char *argv[]) {
             return 2;
         }
     }
+
+    // resolve the filepath. 
+    char fullpath[PATHSIZE];
+    get_fullpath(argv[1], fullpath);
    
+    // Send a message.
     int buf_len;
     for (int i=1; i<argc; i++) {
         // Adjust length of message.
-        char path[strlen(argv[i]) + 1];
-        strfit(argv[i], path);
+        char send_path[strlen(fullpath) + 1];
+        strncpy(send_path, fullpath, sizeof send_path);
 
-        // Send a message.
-        if ((buf_len = send(socket_fd, path, sizeof(path), 0)) < 0) {
+        if ((buf_len = send(socket_fd, send_path, sizeof(send_path), 0)) < 0) {
             perror("send error");
             if (close(socket_fd) < 0) {
                 perror("close");
                 return 2;
             }
         }
-        if (buf_len != sizeof(path)) {
+        if (buf_len != sizeof(send_path)) {
             printf("Sending data is not successful.\n");
         }
     }
@@ -72,8 +92,7 @@ int main(int argc, char *argv[]) {
         memset(buf, 0, sizeof(buf));
     }
    
-end_socket:
-   
+    // close a socket. 
     if (close(socket_fd) < 0) {
         perror("close");
         return 2;
