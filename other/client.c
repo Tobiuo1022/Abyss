@@ -11,33 +11,6 @@
 #define BUFSIZE 1024
 #define PATHSIZE 512
 
-void get_fullpath(char path[PATHSIZE], char fullpath[PATHSIZE]) {
-    char cwd[PATHSIZE];
-    getcwd(cwd, sizeof cwd);
-
-    // absolute path
-    if(path[0] == '/') {
-        snprintf(fullpath, PATHSIZE, "%s", path);
-    // like a ./hoge
-    } else if(path[0] == '.' && path[1] == '/') {
-        snprintf(fullpath, PATHSIZE, "%s", cwd);
-        char *f = fullpath;
-        char *p = path;
-        while(*f != '\0') {
-            f++;
-        }
-        p++;
-        while(*p != '\0') {
-            *f = *p;
-            f++; p++;
-        }
-        *f = '\0';
-    // relative path
-    } else {
-        snprintf(fullpath, PATHSIZE, "%s/%s", cwd, path);
-    }
-}
- 
 int main(int argc, char *argv[]) {
     // Setup server socket.
     struct sockaddr_in server_addr;
@@ -61,21 +34,39 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // resolve the filepath. 
-    char fullpath[PATHSIZE];
-    get_fullpath(argv[1], fullpath);
-   
-    // Send a message.
+    // Send the client's cwd. 
+    char cwd[PATHSIZE];
+    getcwd(cwd, sizeof cwd);
+    // Adjust length of cwd.
+    char send_cwd[strlen(cwd) + 1];
+    strncpy(send_cwd, cwd, sizeof send_cwd);
+
     int buf_len;
+    if ((buf_len = send(socket_fd, send_cwd, sizeof(send_cwd), 0)) < 0) {
+        perror("send error");
+        if (close(socket_fd) < 0) {
+            perror("close error");
+            return 2;
+        }
+    }
+    if (buf_len != sizeof(send_cwd)) {
+        printf("Sending data is not successful.\n");
+    }
+
+    // Receive a response. 
+    char buf[BUFSIZE];
+    buf_len = read(socket_fd, buf, sizeof(buf));
+
+    // Send a message.
     for (int i=1; i<argc; i++) {
         // Adjust length of message.
-        char send_path[strlen(fullpath) + 1];
-        strncpy(send_path, fullpath, sizeof send_path);
+        char send_path[strlen(argv[i]) + 1];
+        strncpy(send_path, argv[i], sizeof send_path);
 
         if ((buf_len = send(socket_fd, send_path, sizeof(send_path), 0)) < 0) {
             perror("send error");
             if (close(socket_fd) < 0) {
-                perror("close");
+                perror("close error");
                 return 2;
             }
         }
@@ -85,7 +76,6 @@ int main(int argc, char *argv[]) {
     }
 
     // Receive a message.
-    char buf[BUFSIZE];
     memset(buf, 0, sizeof(buf));
     while ((buf_len = read(socket_fd, buf, sizeof(buf)))) {
         printf("%s", buf);
@@ -94,7 +84,7 @@ int main(int argc, char *argv[]) {
    
     // close a socket. 
     if (close(socket_fd) < 0) {
-        perror("close");
+        perror("close error");
         return 2;
     }
    

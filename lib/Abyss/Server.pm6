@@ -18,6 +18,13 @@ method readeval {
 
     loop {
         my $conn = $listen.accept;
+
+        # Receive the client's cwd. 
+        my $dir = $conn.recv().chop;
+        chdir $dir;
+        $conn.print("Received client's cwd");
+
+        # Receive the filepath. 
         my $buf = $conn.recv().chop;
         my $path = $buf.IO.resolve;
         say "evaling "~$path;
